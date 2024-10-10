@@ -25,5 +25,8 @@ COPY . /app
 COPY requirements.txt /app/
 RUN pip3 install -r /app/requirements.txt
 
+# Copy PostgreSQL JDBC driver
+COPY postgresql-42.7.4.jar /app/
+
 # Set CMD to run your PySpark script with required packages
-CMD ["spark-submit", "--packages", "org.mongodb.spark:mongo-spark-connector_2.12:2.4.3,org.postgresql:postgresql:42.7.4", "/app/PYSPARK.py"]
+CMD ["spark-submit", "--packages", "org.mongodb.spark:mongo-spark-connector_2.12:10.1.1", "--jars", "/app/postgresql-42.7.4.jar", "/app/PYSPARK.py"]
