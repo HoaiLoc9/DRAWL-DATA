@@ -5,7 +5,7 @@ from crawlsteam.items import CrawlsteamItem
 class MyscraperSpider(scrapy.Spider):
     name = "myscraper"
     allowed_domains = ["store.steampowered.com"]
-    start_urls = [f"https://store.steampowered.com/search/?filter=topsellers&page={i}" for i in range(1, 200)]
+    start_urls = [f"https://store.steampowered.com/search/?filter=topsellers&page={i}" for i in range(1, 180)]
 
     def parse(self, response):
         # Duyệt qua từng kết quả tìm kiếm
@@ -20,19 +20,6 @@ class MyscraperSpider(scrapy.Spider):
 
             # Trích xuất giá gốc
             original_price = game.css('div.discount_original_price::text').get(default=None)
-            # Lấy giá trị gốc từ div.discount_final_price
-            # final_price = game.css('div.discount_final_price::text').get(default=None)
-            # Nếu giá trị không rỗng, loại bỏ các ký tự không phải là số
-            # if original_price:
-            # # Loại bỏ tất cả các ký tự không phải là số
-            #     cleaned_price_original = ''.join(filter(lambda x: x.isdigit(), original_price))
-            # # Chuyển giá về kiểu số nguyên để dễ xử lý hơn
-            #     if cleaned_price_original:
-            #         final_price_number_original = int(cleaned_price_original)
-            #     else:
-            #         final_price_number_original = None  
-            # else:
-            #     final_price_number_original = None
             if original_price:
     # Sử dụng regex để loại bỏ tất cả các ký tự không phải là số, dấu phẩy hoặc dấu chấm
                 cleaned_price_original = re.sub(r'[^\d.,]', '', original_price)
@@ -120,11 +107,6 @@ class MyscraperSpider(scrapy.Spider):
             game_tag = game_tag.strip()
         item['game_tag'] = game_tag
         
-        # Lấy thêm thông tin về developer và link developer (tùy chọn)
-#        dev_names = response.css('div.grid_label:contains("Developer") + div.grid_content a::text').getall()
-#        item['dev_names'] = dev_names
-        
-         # Lấy thông tin đánh giá sử dụng Scrapy
         # Lấy yêu cầu hệ thống tối thiểu (Minimum Requirements)
         minimum_requirements = response.css('div.game_area_sys_req_leftCol ul.bb_ul li::text').getall()
         minimum_requirements_clean = ' '.join([req.strip() for req in minimum_requirements if req.strip()])
@@ -138,38 +120,14 @@ class MyscraperSpider(scrapy.Spider):
         item['minimum_rom']=minimum_rom
         item['minimum_cpu']=minimum_cpu
 
-        # Lấy yêu cầu hệ thống đề nghị (Recommended Requirements)
-        # recommended_requirements = response.css('div.game_area_sys_req_rightCol ul.bb_ul li::text').getall()
-        # recommended_requirements_clean = ' '.join([req.strip() for req in recommended_requirements if req.strip()])
-        # item['recommended_requirements'] = recommended_requirements_clean
-        
-        # Lọc RAM, ROM và CPU từ yêu cầu đề nghị
-        # recommended_ram = next((req for req in recommended_requirements if 'RAM' in req), None)
-        # recommended_rom = next((req for req in recommended_requirements if 'storage' in req.lower() or 'available space' in req.lower()), None)
-        # recommended_cpu = next((req for req in recommended_requirements if 'Core i' in req), None)
-        
         if item['final_price_number_original'] is None:
             item['final_price_number_original']=item['final_price_number_discount']
         
         if item['final_price_number_discount']=='Free':
             item['final_price_number_discount']='0'
             
-        # if item['minimum_cpu'] is None:
-        #     item['minimum_cpu']='Unknow'
-            
-        # if item['minimum_ram'] is None:
-        #     item['minimum_ram']='Unknow'
-
-            
-        # if item['minimum_rom'] is None:
-        #     item['minimum_rom']='Unknow'
-            
         if item['review_summary'] is None:
             item['review_summary']='Mix'
-        
-        # if item['description'] is None:
-        #     item['description']='No description available'
-
         
         if not item['review_summary'] or not item['minimum_cpu'] or not item['minimum_rom'] or not item['minimum_ram']:
             return  # Bỏ qua game nếu thiếu thông tin quan trọng
